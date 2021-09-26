@@ -7,16 +7,20 @@ from linebot.exceptions import (
     InvalidSignatureError, LineBotApiError
 )
 from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage, ImageSendMessage
+    MessageEvent, TextMessage, TextSendMessage, ImageSendMessage, Video, ExternalLink
 )
 
+# from linebot.models import ImagemapSendMessage, BaseSize, URIImagemapAction, MessageImagemapAction, ImagemapArea
+from linebot.models import TemplateSendMessage, ButtonsTemplate, PostbackTemplateAction, MessageTemplateAction, URITemplateAction
 app = Flask(__name__)
+
 
 line_bot_api = LineBotApi('xhZRbHdsYOBhizSuMyi4YABP0FiTvKA5XeN7fWuSdPYC1pcpzcV4h4hShIpp5wkSNA31vFc7NEAUEjpsiVc7yafmR0HGREIVrCEuZhpN+n/Uuq9or6LvZXWEGR0UFtTrbvLpl5Ltxrn61bMsIE+PCAdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('941aa280c7cf7a25f729eb32bd5724e9')
 
 # 推給你自己 
 line_bot_api.push_message('U7cd89978090a0091ce57ab886a37c6c8', TextSendMessage(text='(後臺訊息)啟動豆芽探索共學ECHO機器人!'))
+
 
 # 推給某個User
 # line_bot_api.push_message('UserID', TextSendMessage(text='(後臺訊息)啟動豆芽探索共學ECHO機器人!'))
@@ -41,6 +45,31 @@ def callback():
     return 'OK'
 
 
+button_template_message =ButtonsTemplate(
+                        thumbnail_image_url="https://i.imgur.com/d3vfgZP.png",
+                        title='Menu', 
+                        text='Please select',
+                        ratio="1.51:1",
+                        image_size="cover",
+                        actions=[
+#                                PostbackTemplateAction 點擊選項後，
+#                                 除了文字會顯示在聊天室中，
+#                                 還回傳data中的資料，可
+#                                 此類透過 Postback event 處理。
+#                             PostbackTemplateAction(
+#                                 label='postback 回發訊息data參數會被回傳到', 
+#                                 text='postback text',
+#                                 data='action=buy&itemid=1'
+#                             ),
+                            MessageTemplateAction(
+                                label='message會回傳你好', text='你好'
+                            ),
+                            URITemplateAction(
+                                label='uri可回傳網址', uri='https://hackmd.io/DPLQVfzFS3yAs4ZcpY56NQ?view'
+                            )
+                        ]
+                    )
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
       # get user id when reply
@@ -54,19 +83,23 @@ def handle_message(event):
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text='不錯喔'))
-    
-    image_url = 'https://i.imgur.com/d3vfgZP.png'
-    try:
-        line_bot_api.push_message(user_id, ImageSendMessage(original_content_url=image_url, preview_image_url=image_url))
-    except LineBotApiError as e:
-        # error handle
-        raise e
+        
     else:
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=reply_msg))
+        try:
+    #     alt_text 因template只能夠在手機上顯示，因此在PC版會使用alt_Text替代
+            line_bot_api.push_message(user_id, TemplateSendMessage(alt_text="Template Example", 
+                                                                   template=button_template_message))
+        except LineBotApiError as e:
+            # error handle
+            raise e
+
+        
+        
 
 import os
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
-    app.run(host=0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port)
